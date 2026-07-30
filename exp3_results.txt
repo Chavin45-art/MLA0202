@@ -1,0 +1,11 @@
+EXPERIMENT 3 RESULTS: INFORMATION THEORY (Play Tennis Dataset)
+
+Root Entropy H(PlayTennis) = 0.9403 bits
+
+Information Gain per Attribute:
+  IG(Outlook) = 0.2467
+  IG(Humidity) = 0.1518
+  IG(Wind) = 0.0481
+  IG(Temperature) = 0.0292
+
+Best Attribute (Root Node): Outlook (IG = 0.2467)

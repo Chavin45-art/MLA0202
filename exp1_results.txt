@@ -1,0 +1,14 @@
+EXPERIMENT 1 RESULTS: PROBABILITY THEORY
+Total Instances: 569
+P(Benign) = 357/569 = 0.6274
+P(Malignant) = 212/569 = 0.3726
+
+New Instance 1: {'mean radius': 17.5, 'mean texture': 21.0, 'mean perimeter': 115.0, 'mean area': 950.0}
+  P(Malignant | data) = 0.999999
+  P(Benign | data) = 0.000001
+  Predicted Class: Malignant
+
+New Instance 2: {'mean radius': 9.5, 'mean texture': 14.0, 'mean perimeter': 60.0, 'mean area': 280.0}
+  P(Malignant | data) = 0.000110
+  P(Benign | data) = 0.999890
+  Predicted Class: Benign

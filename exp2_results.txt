@@ -1,0 +1,26 @@
+EXPERIMENT 2 RESULTS: BAYES DECISION THEORY (SMS Spam Classification)
+
+Total messages: 40 (Spam=20, Ham=20)
+P(Spam) = 0.5000, P(Ham) = 0.5000
+
+Message: Congratulations! You have won a free prize, call now to claim your cash reward
+  P(Spam|msg) = 1.000000
+  P(Ham|msg)  = 0.000000
+  Predicted: SPAM
+
+Message: Hey, are we still meeting for lunch tomorrow?
+  P(Spam|msg) = 0.002006
+  P(Ham|msg)  = 0.997994
+  Predicted: HAM
+
+Message: URGENT! Claim your free cash prize now by texting WIN to 12345
+  P(Spam|msg) = 0.999999
+  P(Ham|msg)  = 0.000001
+  Predicted: SPAM
+
+Message: Can you call me back when you get a chance
+  P(Spam|msg) = 0.108959
+  P(Ham|msg)  = 0.891041
+  Predicted: HAM
+
+Training-corpus sanity-check accuracy: 1.0000
