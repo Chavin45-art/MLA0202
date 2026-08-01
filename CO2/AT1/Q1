@@ -1,0 +1,25 @@
+import numpy as np
+
+# Data
+Area     = np.array([1000, 1500, 800, 1200, 2000])
+Bedrooms = np.array([2, 3, 2, 3, 4])
+Price    = np.array([50, 75, 40, 60, 90])
+
+# Design matrix X with intercept column of 1s
+X = np.column_stack((np.ones(len(Area)), Area, Bedrooms))
+y = Price
+
+# Normal Equation: beta = (X^T X)^-1 X^T y
+beta = np.linalg.inv(X.T @ X) @ X.T @ y
+
+b0, b1, b2 = beta
+print(f"β0 (Intercept) = {b0:.4f}")
+print(f"β1 (Area)      = {b1:.4f}")
+print(f"β2 (Bedrooms)  = {b2:.4f}")
+
+print(f"\nModel: Price = {b0:.2f} + {b1:.4f}*Area + {b2:.4f}*Bedrooms")
+
+# Predicted vs Actual
+pred = X @ beta
+for i in range(len(Price)):
+    print(f"House {i+1}: Actual={Price[i]}, Predicted={pred[i]:.2f}")
