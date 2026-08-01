@@ -1,0 +1,30 @@
+import numpy as np
+
+# Data
+Offer = np.array([3, 2, 1, 3, 0])
+Win   = np.array([2, 1, 0, 3, 1])
+Spam  = np.array([1, 1, 0, 1, 0])
+
+# Design matrix with intercept
+X = np.column_stack((np.ones(len(Offer)), Offer, Win))
+y = Spam
+
+# Solve normal equation: beta = (X^T X)^-1 X^T y
+beta = np.linalg.inv(X.T @ X) @ X.T @ y
+b0, b1, b2 = beta
+
+print(f"β0 = {b0:.4f}, β1 = {b1:.4f}, β2 = {b2:.4f}")
+print(f"Model: y_hat = {b0:.2f} + {b1:.2f}*Offer + {b2:.2f}*Win")
+
+# Predict + classify (threshold 0.5)
+scores = X @ beta
+preds = (scores >= 0.5).astype(int)
+
+for i in range(len(y)):
+    print(f"Email {i+1}: score={scores[i]:.2f}, Predicted={preds[i]}, Actual={y[i]}")
+
+# Classify new email: Offer=2, Win=1
+new_email = np.array([1, 2, 1])
+new_score = new_email @ beta
+new_class = 1 if new_score >= 0.5 else 0
+print(f"\nNew Email (Offer=2, Win=1): score={new_score:.2f} -> Class={new_class} (Spam)")
