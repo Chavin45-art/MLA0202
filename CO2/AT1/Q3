@@ -1,0 +1,78 @@
+import numpy as np
+
+# Data: Fever, Headache, Disease (1=Yes, 0=No)
+data = [
+    (1, 1, 1),
+    (1, 0, 1),
+    (0, 1, 0),
+    (1, 1, 1),
+    (0, 0, 0),
+]
+
+Fever    = np.array([d[0] for d in data])
+Headache = np.array([d[1] for d in data])
+Disease  = np.array([d[2] for d in data])   # 1 = Yes, 0 = No
+
+n = len(Disease)
+
+# ---------- (i) Prior Probabilities ----------
+yes_count = np.sum(Disease == 1)
+no_count  = np.sum(Disease == 0)
+
+P_yes = yes_count / n
+P_no  = no_count / n
+
+print("---- Prior Probabilities ----")
+print(f"P(Disease=Yes) = {yes_count}/{n} = {P_yes:.4f}")
+print(f"P(Disease=No)  = {no_count}/{n} = {P_no:.4f}")
+
+# ---------- (ii) Conditional Probabilities ----------
+def conditional_prob(feature, feature_val, disease_val):
+    subset = feature[Disease == disease_val]
+    return np.sum(subset == feature_val) / len(subset)
+
+P_fever1_given_yes = conditional_prob(Fever, 1, 1)
+P_fever0_given_yes = conditional_prob(Fever, 0, 1)
+P_fever1_given_no  = conditional_prob(Fever, 1, 0)
+P_fever0_given_no  = conditional_prob(Fever, 0, 0)
+
+P_head1_given_yes = conditional_prob(Headache, 1, 1)
+P_head0_given_yes = conditional_prob(Headache, 0, 1)
+P_head1_given_no  = conditional_prob(Headache, 1, 0)
+P_head0_given_no  = conditional_prob(Headache, 0, 0)
+
+print("\n---- Conditional Probabilities ----")
+print(f"P(Fever=1|Yes) = {P_fever1_given_yes:.4f}")
+print(f"P(Fever=0|Yes) = {P_fever0_given_yes:.4f}")
+print(f"P(Fever=1|No)  = {P_fever1_given_no:.4f}")
+print(f"P(Fever=0|No)  = {P_fever0_given_no:.4f}")
+
+print(f"P(Headache=1|Yes) = {P_head1_given_yes:.4f}")
+print(f"P(Headache=0|Yes) = {P_head0_given_yes:.4f}")
+print(f"P(Headache=1|No)  = {P_head1_given_no:.4f}")
+print(f"P(Headache=0|No)  = {P_head0_given_no:.4f}")
+
+# ---------- (iii) Naive Bayes Estimate ----------
+# P(Yes | Fever=1, Headache=0)  ∝  P(Yes) * P(Fever=1|Yes) * P(Headache=0|Yes)
+# P(No  | Fever=1, Headache=0)  ∝  P(No)  * P(Fever=1|No)  * P(Headache=0|No)
+
+score_yes = P_yes * P_fever1_given_yes * P_head0_given_yes
+score_no  = P_no  * P_fever1_given_no  * P_head0_given_no
+
+total = score_yes + score_no
+
+# Handle zero-division safely
+if total == 0:
+    prob_yes = prob_no = 0
+else:
+    prob_yes = score_yes / total
+    prob_no  = score_no / total
+
+print("\n---- Naive Bayes Classification (Fever=1, Headache=0) ----")
+print(f"Unnormalized score (Yes) = {score_yes:.4f}")
+print(f"Unnormalized score (No)  = {score_no:.4f}")
+print(f"P(Disease=Yes | Fever=1, Headache=0) = {prob_yes:.4f}")
+print(f"P(Disease=No  | Fever=1, Headache=0) = {prob_no:.4f}")
+
+prediction = "Yes" if prob_yes >= prob_no else "No"
+print(f"\nPredicted class: Disease = {prediction}")
