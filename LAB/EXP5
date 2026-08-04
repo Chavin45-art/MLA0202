@@ -1,0 +1,57 @@
+
+
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+iris = load_iris()
+X, y = iris.data, iris.target
+class_names = iris.target_names
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train, y_train)
+
+y_pred = knn.predict(X_test)
+
+print("Predictions on test data:")
+correct = wrong = 0
+for i in range(len(X_test)):
+    actual = class_names[y_test[i]]
+    predicted = class_names[y_pred[i]]
+    result = "Correct" if actual == predicted else "Wrong"
+    if result == "Correct":
+        correct += 1
+    else:
+        wrong += 1
+    print(f"Sample {i+1}: Actual={actual:10s} Predicted={predicted:10s} -> {result}")
+
+print(f"\nCorrect predictions: {correct}")
+print(f"Wrong predictions:   {wrong}")
+print(f"\nAccuracy: {accuracy_score(y_test, y_pred):.4f}")
+print("\nClassification Report:\n", classification_report(y_test, y_pred, target_names=class_names))
+
+"""
+Sample Output:
+--------------
+Predictions on test data:
+Sample 1: Actual=versicolor Predicted=versicolor -> Correct
+Sample 2: Actual=setosa     Predicted=setosa     -> Correct
+...
+Sample 30: Actual=virginica  Predicted=virginica  -> Correct
+
+Correct predictions: 30
+Wrong predictions:   0
+
+Accuracy: 1.0000
+
+Classification Report:
+               precision    recall  f1-score   support
+      setosa       1.00      1.00      1.00        10
+  versicolor       1.00      1.00      1.00         9
+   virginica       1.00      1.00      1.00        11
+    accuracy                           1.00        30
+"""
