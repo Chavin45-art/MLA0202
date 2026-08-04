@@ -1,0 +1,44 @@
+
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.mixture import GaussianMixture
+from sklearn.metrics import accuracy_score, confusion_matrix
+from scipy.stats import mode
+
+iris = load_iris()
+X, y = iris.data, iris.target
+
+gmm = GaussianMixture(n_components=3, random_state=42, max_iter=200)
+gmm.fit(X)
+y_pred = gmm.predict(X)
+
+# Map each cluster to the most frequent true label in that cluster
+labels_mapped = np.zeros_like(y_pred)
+for cluster in range(3):
+    mask = (y_pred == cluster)
+    labels_mapped[mask] = mode(y[mask], keepdims=True).mode[0]
+
+print("Converged:", gmm.converged_)
+print("Number of EM iterations run:", gmm.n_iter_)
+print("\nLearned means (per component):\n", gmm.means_)
+print("\nConfusion Matrix:\n", confusion_matrix(y, labels_mapped))
+print("\nAccuracy:", accuracy_score(y, labels_mapped))
+
+"""
+Output:
+-------
+Converged: True
+Number of EM iterations run: 17
+
+Learned means (per component):
+ [[6.54639415 2.94946365 5.48364578 1.98726565]
+ [5.006      3.428      1.462      0.246     ]
+ [5.9170732  2.77804839 4.20540364 1.29848217]]
+
+Confusion Matrix:
+ [[50  0  0]
+ [ 0 45  5]
+ [ 0  0 50]]
+
+Accuracy: 0.9666666666666667
+"""
