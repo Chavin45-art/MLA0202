@@ -1,0 +1,118 @@
+
+
+import math
+import pandas as pd
+
+
+def entropy(column):
+    values = column.value_counts()
+    total = len(column)
+    ent = 0.0
+    for count in values:
+        p = count / total
+        ent -= p * math.log2(p)
+    return ent
+
+
+def info_gain(data, attribute, target):
+    total_entropy = entropy(data[target])
+    values = data[attribute].unique()
+    weighted_entropy = 0.0
+    for v in values:
+        subset = data[data[attribute] == v]
+        weighted_entropy += (len(subset) / len(data)) * entropy(subset[target])
+    return total_entropy - weighted_entropy
+
+
+def id3(data, attributes, target):
+    # If all target values are the same, return a leaf node
+    if len(data[target].unique()) == 1:
+        return data[target].iloc[0]
+
+    # If no attributes left, return the majority class
+    if not attributes:
+        return data[target].mode()[0]
+
+    # Choose the attribute with the highest information gain
+    gains = {attr: info_gain(data, attr, target) for attr in attributes}
+    best_attr = max(gains, key=gains.get)
+
+    tree = {best_attr: {}}
+    remaining_attrs = [a for a in attributes if a != best_attr]
+
+    for value in data[best_attr].unique():
+        subset = data[data[best_attr] == value]
+        if subset.empty:
+            tree[best_attr][value] = data[target].mode()[0]
+        else:
+            tree[best_attr][value] = id3(subset, remaining_attrs, target)
+
+    return tree
+
+
+def classify(tree, sample):
+    if not isinstance(tree, dict):
+        return tree
+    attribute = next(iter(tree))
+    value = sample.get(attribute)
+    subtree = tree[attribute].get(value)
+    if subtree is None:
+        return "Unknown"
+    return classify(subtree, sample)
+
+
+def print_tree(tree, indent=""):
+    if not isinstance(tree, dict):
+        print(indent + "-> " + str(tree))
+        return
+    attribute = next(iter(tree))
+    for value, subtree in tree[attribute].items():
+        print(indent + f"[{attribute} = {value}]")
+        print_tree(subtree, indent + "    ")
+
+
+if __name__ == "__main__":
+    data = pd.read_csv("playtennis.csv")
+    target = "PlayTennis"
+    attributes = [c for c in data.columns if c != target]
+
+    print("Training data:")
+    print(data)
+
+    tree = id3(data, attributes, target)
+
+    print("\nLearned Decision Tree:")
+    print_tree(tree)
+
+    # Classify a new sample
+    new_sample = {"Outlook": "Sunny", "Temperature": "Cool",
+                   "Humidity": "High", "Wind": "Strong"}
+    prediction = classify(tree, new_sample)
+    print("\nNew sample:", new_sample)
+    print("Predicted class:", prediction)
+
+"""
+Sample Output:
+--------------
+Training data:
+     Outlook Temperature Humidity    Wind PlayTennis
+0      Sunny         Hot     High    Weak         No
+...(14 rows)...
+
+Learned Decision Tree:
+[Outlook = Sunny]
+    [Humidity = High]
+        -> No
+    [Humidity = Normal]
+        -> Yes
+[Outlook = Overcast]
+    -> Yes
+[Outlook = Rain]
+    [Wind = Weak]
+        -> Yes
+    [Wind = Strong]
+        -> No
+
+New sample: {'Outlook': 'Sunny', 'Temperature': 'Cool', 'Humidity': 'High', 'Wind': 'Strong'}
+Predicted class: No
+"""
