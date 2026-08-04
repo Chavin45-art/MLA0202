@@ -1,0 +1,83 @@
+
+
+import numpy as np
+
+np.random.seed(1)
+
+# Input data: [hours slept, hours studied], scaled to 0-1
+X = np.array([[2, 9], [1, 5], [3, 6]], dtype=float)
+y = np.array([[92], [86], [89]], dtype=float)
+
+X = X / np.amax(X, axis=0)   # normalize inputs
+y = y / 100                  # normalize output (max score = 100)
+
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+
+# Network configuration
+input_neurons, hidden_neurons, output_neurons = 2, 3, 1
+epochs, lr = 7000, 0.1
+
+wh = np.random.uniform(size=(input_neurons, hidden_neurons))
+bh = np.random.uniform(size=(1, hidden_neurons))
+wout = np.random.uniform(size=(hidden_neurons, output_neurons))
+bout = np.random.uniform(size=(1, output_neurons))
+
+for epoch in range(epochs):
+    # Forward propagation
+    hidden_input = np.dot(X, wh) + bh
+    hidden_output = sigmoid(hidden_input)
+
+    final_input = np.dot(hidden_output, wout) + bout
+    final_output = sigmoid(final_input)
+
+    # Backpropagation
+    error = y - final_output
+    d_output = error * sigmoid_derivative(final_output)
+
+    error_hidden = d_output.dot(wout.T)
+    d_hidden = error_hidden * sigmoid_derivative(hidden_output)
+
+    wout += hidden_output.T.dot(d_output) * lr
+    bout += np.sum(d_output, axis=0, keepdims=True) * lr
+    wh += X.T.dot(d_hidden) * lr
+    bh += np.sum(d_hidden, axis=0, keepdims=True) * lr
+
+    if (epoch + 1) % 1000 == 0:
+        loss = np.mean(np.square(error))
+        print(f"Epoch {epoch + 1}/{epochs}  Loss: {loss:.6f}")
+
+print("\nInput (normalized):\n", X)
+print("Actual Output:\n", y)
+print("Predicted Output:\n", final_output)
+
+"""
+Sample Output:
+--------------
+Epoch 1000/7000  Loss: 0.000407
+Epoch 2000/7000  Loss: 0.000400
+Epoch 3000/7000  Loss: 0.000392
+Epoch 4000/7000  Loss: 0.000385
+Epoch 5000/7000  Loss: 0.000378
+Epoch 6000/7000  Loss: 0.000371
+Epoch 7000/7000  Loss: 0.000364
+
+Input (normalized):
+ [[0.66666667 1.        ]
+ [0.33333333 0.55555556]
+ [1.         0.66666667]]
+Actual Output:
+ [[0.92]
+ [0.86]
+ [0.89]]
+Predicted Output:
+ [[0.89401252]
+ [0.87968827]
+ [0.89535366]]
+"""
