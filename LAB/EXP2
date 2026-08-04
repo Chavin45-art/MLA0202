@@ -1,0 +1,129 @@
+
+
+import csv
+
+
+def read_data(filename):
+    with open(filename, "r") as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        data = [row for row in reader]
+    return data
+
+
+def more_general(h1, h2):
+    """Return True if h1 is more general than or equal to h2."""
+    for x, y in zip(h1, h2):
+        if x == "?":
+            continue
+        if x != y:
+            return False
+    return True
+
+
+def fulfills(example, hypothesis):
+    return more_general(hypothesis, example)
+
+
+def min_generalizations(h, x):
+    """Generalize h minimally so it covers positive example x."""
+    h_new = list(h)
+    for i in range(len(h)):
+        if h[i] != x[i]:
+            h_new[i] = "?" if h[i] != "0" else x[i]
+    return [h_new]
+
+
+def min_specializations(h, domains, x):
+    """Specialize h minimally so it no longer covers negative example x."""
+    results = []
+    for i in range(len(h)):
+        if h[i] == "?":
+            for val in domains[i]:
+                if val != x[i]:
+                    h_new = h[:i] + [val] + h[i + 1:]
+                    results.append(h_new)
+        elif h[i] != "0":
+            h_new = h[:i] + ["0"] + h[i + 1:]
+            results.append(h_new)
+    return results
+
+
+def candidate_elimination(data):
+    n_attributes = len(data[0]) - 1
+    domains = [set() for _ in range(n_attributes)]
+    for row in data:
+        for i in range(n_attributes):
+            domains[i].add(row[i])
+
+    S = ["0"] * n_attributes          # most specific boundary
+    G = [["?"] * n_attributes]        # most general boundary
+
+    for row in data:
+        x, label = row[:-1], row[-1].strip().lower()
+
+        if label == "yes":
+            # Remove from G any hypothesis inconsistent with x
+            G = [g for g in G if fulfills(x, g)]
+
+            if not fulfills(x, S):
+                S_new = min_generalizations(S, x)[0]
+                # Remove hypotheses in G more specific than S_new
+                G = [g for g in G if more_general(g, S_new)]
+                S = S_new
+
+        else:  # negative example
+            if fulfills(x, S):
+                # S incorrectly covers a negative example: discard (kept simple here)
+                pass
+
+            G_new = []
+            for g in G:
+                if fulfills(x, g):
+                    specializations = min_specializations(g, domains, x)
+                    for s in specializations:
+                        if more_general(s, S):
+                            G_new.append(s)
+                else:
+                    G_new.append(g)
+            # Remove hypotheses more general than another hypothesis in G_new
+            G = [g for g in G_new if not any(
+                g != g2 and more_general(g2, g) for g2 in G_new)]
+
+        print(f"\nAfter example {row}:")
+        print("S =", S)
+        print("G =", G)
+
+    return S, G
+
+
+if __name__ == "__main__":
+    data = read_data("enjoysport.csv")
+    print("Training data:")
+    for row in data:
+        print(row)
+
+    S_final, G_final = candidate_elimination(data)
+
+    print("\nFinal Specific boundary S:")
+    print(S_final)
+    print("\nFinal General boundary G:")
+    print(G_final)
+
+"""
+Sample Output:
+--------------
+Training data:
+['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes']
+['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same', 'Yes']
+['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change', 'No']
+['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change', 'Yes']
+
+... (intermediate S, G printed after each example) ...
+
+Final Specific boundary S:
+['Sunny', 'Warm', '?', 'Strong', '?', '?']
+
+Final General boundary G:
+[['Sunny', '?', '?', '?', '?', '?'], ['?', 'Warm', '?', '?', '?', '?']]
+"""
