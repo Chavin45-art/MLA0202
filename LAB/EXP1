@@ -1,0 +1,60 @@
+
+
+import csv
+
+
+def find_s(filename):
+    with open(filename, "r") as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        data = [row for row in reader]
+
+    print("Training data:")
+    for row in data:
+        print(row)
+
+    # Number of attributes (excluding the target column)
+    n_attributes = len(data[0]) - 1
+
+    # Step 1: Initialize hypothesis to the most specific hypothesis
+    hypothesis = ["0"] * n_attributes
+
+    # Step 2: Find the first positive example and initialize hypothesis with it
+    for row in data:
+        if row[-1].strip().lower() == "yes":
+            hypothesis = row[:-1]
+            break
+
+    print("\nInitial hypothesis (from first positive example):", hypothesis)
+
+    # Step 3: Refine hypothesis using remaining positive examples
+    for row in data:
+        if row[-1].strip().lower() == "yes":
+            for i in range(n_attributes):
+                if hypothesis[i] != row[i]:
+                    hypothesis[i] = "?"
+        # Negative examples are ignored by FIND-S
+
+    return hypothesis
+
+
+if __name__ == "__main__":
+    final_hypothesis = find_s("enjoysport.csv")
+    print("\nMost specific hypothesis found by FIND-S:")
+    print(final_hypothesis)
+
+"""
+Sample Output:
+--------------
+Training data:
+['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes']
+['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same', 'Yes']
+['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change', 'No']
+['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change', 'Yes']
+
+Initial hypothesis (from first positive example):
+['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same']
+
+Most specific hypothesis found by FIND-S:
+['Sunny', 'Warm', '?', 'Strong', '?', '?']
+"""
