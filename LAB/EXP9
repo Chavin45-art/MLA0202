@@ -1,0 +1,68 @@
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Generate synthetic non-linear data: y = 0.5x^2 - 2x + 3 + noise
+rng = np.random.RandomState(42)
+X = np.sort(rng.uniform(-3, 3, 40)).reshape(-1, 1)
+y = 0.5 * X.ravel() ** 2 - 2 * X.ravel() + 3 + rng.normal(0, 1, size=X.shape[0])
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+# ---- Linear Regression ----
+lin_model = LinearRegression()
+lin_model.fit(X_train, y_train)
+y_pred_lin = lin_model.predict(X_test)
+
+# ---- Polynomial Regression (degree 2) ----
+poly = PolynomialFeatures(degree=2)
+X_train_poly = poly.fit_transform(X_train)
+X_test_poly = poly.transform(X_test)
+
+poly_model = LinearRegression()
+poly_model.fit(X_train_poly, y_train)
+y_pred_poly = poly_model.predict(X_test_poly)
+
+print("---- Linear Regression ----")
+print(f"MSE: {mean_squared_error(y_test, y_pred_lin):.4f}")
+print(f"R^2 Score: {r2_score(y_test, y_pred_lin):.4f}")
+
+print("\n---- Polynomial Regression (degree 2) ----")
+print(f"MSE: {mean_squared_error(y_test, y_pred_poly):.4f}")
+print(f"R^2 Score: {r2_score(y_test, y_pred_poly):.4f}")
+
+# Plot comparison
+X_line = np.linspace(-3, 3, 200).reshape(-1, 1)
+plt.scatter(X, y, color="gray", label="Data", alpha=0.6)
+plt.plot(X_line, lin_model.predict(X_line), color="blue", label="Linear fit")
+plt.plot(X_line, poly_model.predict(poly.transform(X_line)), color="red", label="Polynomial fit (deg 2)")
+plt.xlabel("X")
+plt.ylabel("y")
+plt.title("Linear vs Polynomial Regression")
+plt.legend()
+plt.savefig("linear_vs_polynomial_plot.png")
+print("\nPlot saved as linear_vs_polynomial_plot.png")
+
+"""
+Sample Output:
+--------------
+---- Linear Regression ----
+MSE: 1.4419
+R^2 Score: 0.8504
+
+---- Polynomial Regression (degree 2) ----
+MSE: 0.9293
+R^2 Score: 0.9036
+
+Plot saved as linear_vs_polynomial_plot.png
+
+(Polynomial regression fits the curved data much better than linear
+regression, shown by the lower MSE and higher R^2 score.)
+"""
