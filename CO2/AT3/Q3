@@ -1,0 +1,50 @@
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from collections import defaultdict
+
+train_docs = [("win money now", "spam"), ("claim your free prize", "spam"),
+              ("winner cash prize today", "spam"), ("meeting schedule update", "ham"),
+              ("project report attached", "ham"), ("lunch meeting tomorrow", "ham")]
+test_doc = "free prize meeting"  # "prize" never seen in ham class
+
+classes = ["spam", "ham"]
+counts = {c: defaultdict(int) for c in classes}
+totals = {c: 0 for c in classes}
+for doc, label in train_docs:
+    for w in doc.split():
+        counts[label][w] += 1
+        totals[label] += 1
+
+# (i) Identify: word missing from a class -> zero probability
+print(f"'prize' count in ham: {counts['ham']['prize']}")
+
+# (ii) Analyze: unsmoothed score collapses to zero
+def score_no_smoothing(doc):
+    scores = {}
+    for c in classes:
+        p = 1.0
+        for w in doc.split():
+            p *= counts[c][w] / totals[c] if totals[c] else 0
+        scores[c] = p
+    return scores
+print("Unsmoothed scores:", score_no_smoothing(test_doc))
+
+# (iii) Fix: Laplace (add-1) smoothing
+vocab = set(w for d, _ in train_docs for w in d.split())
+V = len(vocab)
+def score_laplace(doc, alpha=1):
+    scores = {}
+    for c in classes:
+        p = 1.0
+        for w in doc.split():
+            p *= (counts[c][w] + alpha) / (totals[c] + alpha * V)
+        scores[c] = p
+    return scores
+print("Smoothed scores:", score_laplace(test_doc))
+
+# Equivalent using scikit-learn
+vec = CountVectorizer().fit([d for d, _ in train_docs])
+Xtr = vec.transform([d for d, _ in train_docs])
+nb = MultinomialNB(alpha=1.0).fit(Xtr, [l for _, l in train_docs])
+print("sklearn prediction:", nb.predict(vec.transform([test_doc]))[0])
