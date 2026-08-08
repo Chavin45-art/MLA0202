@@ -1,0 +1,39 @@
+import numpy as np, pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.utils import resample
+
+np.random.seed(42)
+n_ham, n_spam = 900, 100  # imbalanced classes
+ham = pd.DataFrame({"links": np.random.poisson(1.2, n_ham), "excl": np.random.poisson(0.8, n_ham),
+                     "caps": np.random.beta(2, 6, n_ham)*100, "spam_words": np.random.poisson(0.8, n_ham), "label": 0})
+spam = pd.DataFrame({"links": np.random.poisson(1.8, n_spam), "excl": np.random.poisson(1.3, n_spam),
+                      "caps": np.random.beta(3, 5, n_spam)*100, "spam_words": np.random.poisson(1.6, n_spam), "label": 1})
+df = pd.concat([ham, spam], ignore_index=True)
+
+# (i) Identify: check imbalance
+print("Class balance:", df.label.value_counts().to_dict())
+
+# (ii) Analyze: baseline confusion matrix
+X, y = df.drop(columns="label"), df.label
+Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.25, stratify=y, random_state=42)
+scaler = StandardScaler().fit(Xtr)
+base = LogisticRegression().fit(scaler.transform(Xtr), ytr)
+pred_base = base.predict(scaler.transform(Xte))
+print("Baseline confusion matrix:\n", confusion_matrix(yte, pred_base))
+print(classification_report(yte, pred_base, target_names=["ham", "spam"]))
+
+# (iii) Refine: balance data + class_weight + tuned threshold
+train = Xtr.copy(); train["label"] = ytr.values
+maj, mino = train[train.label == 0], train[train.label == 1]
+mino_up = resample(mino, replace=True, n_samples=len(maj), random_state=42)
+bal = pd.concat([maj, mino_up])
+Xtr_b, ytr_b = bal.drop(columns="label"), bal.label
+scaler2 = StandardScaler().fit(Xtr_b)
+model = LogisticRegression(class_weight="balanced").fit(scaler2.transform(Xtr_b), ytr_b)
+proba = model.predict_proba(scaler2.transform(Xte))[:, 1]
+pred_ref = (proba >= 0.4).astype(int)  # tuned threshold instead of 0.5
+print("Refined confusion matrix:\n", confusion_matrix(yte, pred_ref))
+print(classification_report(yte, pred_ref, target_names=["ham", "spam"]))
