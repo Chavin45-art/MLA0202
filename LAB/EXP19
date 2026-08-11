@@ -1,0 +1,35 @@
+import numpy as np, pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+np.random.seed(42)
+n = 800
+df = pd.DataFrame({
+    'age': np.random.randint(21, 65, n),
+    'income': np.random.randint(20000, 150000, n),
+    'credit_score': np.random.randint(300, 850, n),
+    'loan_amount': np.random.randint(1000, 50000, n),
+    'existing_loans': np.random.randint(0, 5, n),
+})
+
+approve_score = (df.credit_score/850*0.5 + df.income/150000*0.3
+                  - df.loan_amount/50000*0.15 - df.existing_loans*0.05)
+df['loan_approved'] = (approve_score > approve_score.median()).astype(int)
+
+X = df.drop('loan_approved', axis=1)
+y = df['loan_approved']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = GaussianNB()
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+sample = pd.DataFrame([{'age': 35, 'income': 60000, 'credit_score': 700,
+                         'loan_amount': 15000, 'existing_loans': 1}])
+print("Sample prediction (1=Approved, 0=Rejected):", model.predict(sample)[0])
+print("P.N.V.CHAVIN/192525310")
