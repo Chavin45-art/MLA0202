@@ -1,0 +1,33 @@
+import numpy as np, pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+np.random.seed(42)
+n = 1000
+df = pd.DataFrame({
+    'battery_power': np.random.randint(500, 2000, n),
+    'ram': np.random.randint(256, 8192, n),
+    'internal_memory': np.random.randint(2, 128, n),
+    'px_height': np.random.randint(0, 1960, n),
+    'px_width': np.random.randint(500, 2000, n),
+    'mobile_wt': np.random.randint(80, 220, n),
+    'talk_time': np.random.randint(2, 20, n),
+})
+
+score = (df.ram/8192*0.4 + df.battery_power/2000*0.2 +
+         df.internal_memory/128*0.2 + (df.px_height*df.px_width)/(1960*2000)*0.2)
+df['price_range'] = pd.qcut(score, 4, labels=[0, 1, 2, 3]).astype(int)
+
+X = df.drop('price_range', axis=1)
+y = df['price_range']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = RandomForestClassifier(n_estimators=200, random_state=42)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+print("P.N.V.CHAVIN/192525310")
