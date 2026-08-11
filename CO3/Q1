@@ -1,0 +1,68 @@
+"""
+Task 1: Customer Segmentation using K-Means and PCA
+Dataset: Mall_Customers.csv (Kaggle "Mall Customer Segmentation Data")
+Place Mall_Customers.csv in the same folder, or the script falls back
+to a small synthetic dataset with the same columns.
+"""
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+
+# 1. Load data
+try:
+    df = pd.read_csv("Mall_Customers.csv")
+except FileNotFoundError:
+    rng = np.random.default_rng(42)
+    df = pd.DataFrame({
+        "CustomerID": range(1, 201),
+        "Gender": rng.choice(["Male", "Female"], 200),
+        "Age": rng.integers(18, 70, 200),
+        "Annual Income (k$)": rng.integers(15, 140, 200),
+        "Spending Score (1-100)": rng.integers(1, 100, 200),
+    })
+
+# 2. Preprocess
+df["Gender"] = df["Gender"].map({"Male": 0, "Female": 1})
+X = df[["Age", "Annual Income (k$)", "Spending Score (1-100)"]].values
+X_scaled = StandardScaler().fit_transform(X)
+
+# 3. Elbow Method + Silhouette Score to find optimal k
+inertias, sil_scores = [], []
+K_range = range(2, 11)
+for k in K_range:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_scaled)
+    inertias.append(km.inertia_)
+    sil_scores.append(silhouette_score(X_scaled, km.labels_))
+
+best_k = K_range[int(np.argmax(sil_scores))]
+print(f"Optimal k by Silhouette Score: {best_k}")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+axes[0].plot(list(K_range), inertias, marker="o")
+axes[0].set_title("Elbow Method"); axes[0].set_xlabel("k"); axes[0].set_ylabel("Inertia")
+axes[1].plot(list(K_range), sil_scores, marker="o", color="green")
+axes[1].set_title("Silhouette Score"); axes[1].set_xlabel("k")
+plt.tight_layout()
+plt.savefig("elbow_silhouette.png", dpi=120)
+
+# 4. Fit final K-Means with best_k
+kmeans = KMeans(n_clusters=best_k, random_state=42, n_init=10)
+df["Cluster"] = kmeans.fit_predict(X_scaled)
+
+# 5. PCA to 2D and visualize clusters
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+plt.figure(figsize=(7, 5))
+scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=df["Cluster"], cmap="tab10", s=40)
+plt.title(f"Customer Segments (K-Means, k={best_k}) via PCA")
+plt.xlabel("PC1"); plt.ylabel("PC2")
+plt.colorbar(scatter, label="Cluster")
+plt.tight_layout()
+plt.savefig("customer_clusters_pca.png", dpi=120)
+
+print(df.groupby("Cluster")[["Age", "Annual Income (k$)", "Spending Score (1-100)"]].mean())
