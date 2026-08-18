@@ -1,0 +1,62 @@
+import sklearn_crfsuite
+
+print("P.N.V.CHAVIN/192525310")
+
+train_sentences = [
+    [("My", "O"), ("name", "O"), ("is", "O"), ("John", "CUSTOMER_NAME"),
+     ("Smith", "CUSTOMER_NAME"), ("and", "O"), ("my", "O"), ("order", "O"),
+     ("id", "O"), ("is", "O"), ("ORD1234", "ORDER_ID")],
+    [("I", "O"), ("bought", "O"), ("an", "O"), ("iPhone", "PRODUCT_NAME"),
+     ("15", "PRODUCT_NAME"), ("with", "O"), ("order", "O"), ("id", "O"),
+     ("ORD5678", "ORDER_ID")],
+    [("This", "O"), ("is", "O"), ("Alice", "CUSTOMER_NAME"),
+     ("Brown", "CUSTOMER_NAME"), ("regarding", "O"), ("my", "O"),
+     ("Samsung", "PRODUCT_NAME"), ("TV", "PRODUCT_NAME")]
+]
+
+def word2features(sent, i):
+    word = sent[i][0]
+    features = {
+        'word.lower()': word.lower(),
+        'word.isupper()': word.isupper(),
+        'word.istitle()': word.istitle(),
+        'word.isdigit()': word.isdigit(),
+        'BOS': i == 0,
+        'EOS': i == len(sent) - 1
+    }
+    if i > 0:
+        prev_word = sent[i - 1][0]
+        features['prev_word.lower()'] = prev_word.lower()
+    if i < len(sent) - 1:
+        next_word = sent[i + 1][0]
+        features['next_word.lower()'] = next_word.lower()
+    return features
+
+def sent2features(sent):
+    return [word2features(sent, i) for i in range(len(sent))]
+
+def sent2labels(sent):
+    return [label for token, label in sent]
+
+X_train = [sent2features(s) for s in train_sentences]
+y_train = [sent2labels(s) for s in train_sentences]
+
+crf = sklearn_crfsuite.CRF(
+    algorithm='lbfgs',
+    c1=0.1,
+    c2=0.1,
+    max_iterations=100,
+    all_possible_transitions=True
+)
+crf.fit(X_train, y_train)
+
+test_sentence = ["Hi", "this", "is", "David", "Lee", "with", "order", "id", "ORD9999"]
+test_features = [word2features([(w, "") for w in test_sentence], i)
+                  for i in range(len(test_sentence))]
+
+predicted_labels = crf.predict([test_features])[0]
+
+print("Test Sentence:", test_sentence)
+print("Predicted Entity Labels:", predicted_labels)
+for word, label in zip(test_sentence, predicted_labels):
+    print(f"{word}: {label}")
