@@ -1,0 +1,52 @@
+import pandas as pd
+import numpy as np
+from pgmpy.estimators import HillClimbSearch, BIC
+from pgmpy.parameter_estimator import DiscreteMLE
+from pgmpy.models import DiscreteBayesianNetwork
+from pgmpy.inference import VariableElimination
+
+print("P.N.V.CHAVIN/192525310")
+
+np.random.seed(42)
+n = 200
+
+age = np.random.choice(["Young", "Middle", "Old"], size=n, p=[0.4, 0.4, 0.2])
+income = np.random.choice(["Low", "Medium", "High"], size=n, p=[0.3, 0.4, 0.3])
+vehicle_type = np.random.choice(["Sedan", "SUV", "Truck"], size=n)
+claim = []
+for a, i in zip(age, income):
+    if a == "Young" and i == "Low":
+        claim.append(np.random.choice(["Yes", "No"], p=[0.7, 0.3]))
+    elif a == "Old":
+        claim.append(np.random.choice(["Yes", "No"], p=[0.6, 0.4]))
+    else:
+        claim.append(np.random.choice(["Yes", "No"], p=[0.2, 0.8]))
+
+data = pd.DataFrame({
+    "Age": age,
+    "Income": income,
+    "VehicleType": vehicle_type,
+    "Claim": claim
+})
+
+hc = HillClimbSearch(data)
+best_model = hc.estimate(scoring_method=BIC(data))
+
+print("Learned Bayesian Network Structure:")
+print(list(best_model.edges()))
+
+model = DiscreteBayesianNetwork(best_model.edges())
+model.fit(data, estimator=DiscreteMLE())
+
+infer = VariableElimination(model)
+
+new_customer = {"Age": "Young", "Income": "Low"}
+query_vars = [v for v in new_customer if v not in model.nodes()]
+evidence = {k: v for k, v in new_customer.items() if k in model.nodes()}
+
+if "Claim" in model.nodes():
+    result = infer.query(variables=["Claim"], evidence=evidence)
+    print("\nPredicted Insurance Claim Probability for new customer", new_customer)
+    print(result)
+else:
+    print("Claim node not connected in learned structure.")
