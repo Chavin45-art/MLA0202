@@ -1,0 +1,32 @@
+import numpy as np
+
+print("P.N.V.CHAVIN/192525310")
+
+image = np.array([
+    [100, 102, 250, 98],
+    [101, 99, 103, 97],
+    [250, 100, 101, 102],
+    [99, 98, 100, 250]
+])
+
+rows, cols = image.shape
+updated_image = image.copy().astype(float)
+
+def get_neighbors(r, c, rows, cols):
+    neighbors = []
+    for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < rows and 0 <= nc < cols:
+            neighbors.append(image[nr][nc])
+    return neighbors
+
+for r in range(rows):
+    for c in range(cols):
+        neighbors = get_neighbors(r, c, rows, cols)
+        neighbor_avg = np.mean(neighbors)
+        updated_image[r][c] = 0.5 * image[r][c] + 0.5 * neighbor_avg
+
+print("Original Image:")
+print(image)
+print("\nUpdated Image after One Iteration of MRF Smoothing:")
+print(np.round(updated_image, 2))
