@@ -1,0 +1,35 @@
+import numpy as np
+from hmmlearn import hmm
+
+print("P.N.V.CHAVIN/192525310")
+
+states = ["Sunny", "Rainy"]
+n_states = len(states)
+
+observations = ["Sunny", "Cloudy", "Rainy"]
+n_observations = len(observations)
+
+model = hmm.CategoricalHMM(n_components=n_states, random_state=42)
+
+model.startprob_ = np.array([0.6, 0.4])
+
+model.transmat_ = np.array([
+    [0.7, 0.3],
+    [0.4, 0.6]
+])
+
+model.emissionprob_ = np.array([
+    [0.6, 0.3, 0.1],
+    [0.1, 0.3, 0.6]
+])
+
+obs_sequence = np.array([[0], [1], [2], [1], [0]])
+
+logprob, hidden_states = model.decode(obs_sequence, algorithm="viterbi")
+
+obs_labels = [observations[i[0]] for i in obs_sequence]
+predicted_states = [states[i] for i in hidden_states]
+
+print("Observation Sequence:", obs_labels)
+print("Predicted Hidden Weather States:", predicted_states)
+print("Log Probability of Sequence:", logprob)
