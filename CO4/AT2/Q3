@@ -1,0 +1,50 @@
+import sklearn_crfsuite
+
+train_sentences = [
+    [("Hi", "O"), ("I", "O"), ("am", "O"), ("John", "B-CUSTOMER"), ("Smith", "I-CUSTOMER"),
+     ("and", "O"), ("my", "O"), ("order", "O"), ("ORD1234", "B-ORDERID"),
+     ("for", "O"), ("iPhone15", "B-PRODUCT"), ("is", "O"), ("delayed", "B-ISSUE")],
+    [("Hello,", "O"), ("customer", "O"), ("Emma", "B-CUSTOMER"), ("Watson", "I-CUSTOMER"),
+     ("reports", "O"), ("that", "O"), ("SamsungTV", "B-PRODUCT"), ("order", "O"),
+     ("ORD5678", "B-ORDERID"), ("arrived", "O"), ("damaged", "B-ISSUE")],
+    [("Dear", "O"), ("support,", "O"), ("Mike", "B-CUSTOMER"), ("Brown", "I-CUSTOMER"),
+     ("order", "O"), ("ORD9012", "B-ORDERID"), ("for", "O"), ("Laptop", "B-PRODUCT"),
+     ("is", "O"), ("missing", "B-ISSUE")]
+]
+
+def word2features(sent, i):
+    word = sent[i][0]
+    return {
+        'word.lower()': word.lower(),
+        'word.isupper()': word.isupper(),
+        'word.istitle()': word.istitle(),
+        'word.isdigit()': word.isdigit(),
+        'word[-3:]': word[-3:],
+        'BOS': i == 0,
+        'EOS': i == len(sent) - 1
+    }
+
+def sent2features(sent):
+    return [word2features(sent, i) for i in range(len(sent))]
+
+def sent2labels(sent):
+    return [label for token, label in sent]
+
+X_train = [sent2features(s) for s in train_sentences]
+y_train = [sent2labels(s) for s in train_sentences]
+
+crf = sklearn_crfsuite.CRF(algorithm='lbfgs', c1=0.1, c2=0.1, max_iterations=100)
+crf.fit(X_train, y_train)
+
+new_email = ["Hi", "this", "is", "Sarah", "Lee", "order", "ORD3456", "for",
+             "Headphones", "not", "working"]
+new_sent = [(w, "O") for w in new_email]
+X_new = [sent2features(new_sent)]
+
+predicted_labels = crf.predict(X_new)[0]
+
+print("Email:", " ".join(new_email))
+print("\nPredicted Entities:")
+for word, label in zip(new_email, predicted_labels):
+    print(f"{word:15} -> {label}")
+print("P.N.V.CHAVIN/192525310")
