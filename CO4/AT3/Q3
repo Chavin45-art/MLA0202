@@ -1,0 +1,52 @@
+from pgmpy.models import DiscreteBayesianNetwork
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.inference import VariableElimination
+import numpy as np
+import itertools
+
+bn_model = DiscreteBayesianNetwork([
+    ('Income', 'CreditScore'), ('DebtLevel', 'CreditScore'),
+    ('CreditScore', 'Default'), ('TransactionAnomaly', 'Default')
+])
+
+cpd_income = TabularCPD('Income', 2, [[0.6], [0.4]])
+cpd_debt = TabularCPD('DebtLevel', 2, [[0.7], [0.3]])
+cpd_anomaly = TabularCPD('TransactionAnomaly', 2, [[0.9], [0.1]])
+
+cpd_credit = TabularCPD('CreditScore', 2,
+    [[0.9, 0.6, 0.5, 0.1], [0.1, 0.4, 0.5, 0.9]],
+    evidence=['Income', 'DebtLevel'], evidence_card=[2, 2])
+
+cpd_default = TabularCPD('Default', 2,
+    [[0.95, 0.6, 0.5, 0.1], [0.05, 0.4, 0.5, 0.9]],
+    evidence=['CreditScore', 'TransactionAnomaly'], evidence_card=[2, 2])
+
+bn_model.add_cpds(cpd_income, cpd_debt, cpd_anomaly, cpd_credit, cpd_default)
+bn_model.check_model()
+
+infer = VariableElimination(bn_model)
+result = infer.query(variables=['Default'], evidence={'TransactionAnomaly': 1, 'DebtLevel': 1})
+print(result)
+
+nodes = ['Income', 'DebtLevel', 'CreditScore', 'Default']
+
+def pairwise_potential(strength=2.0):
+    return np.array([[strength, 1.0], [1.0, strength]])
+
+edges = [('Income', 'CreditScore'), ('DebtLevel', 'CreditScore'), ('CreditScore', 'Default')]
+potentials = {e: pairwise_potential() for e in edges}
+
+def joint_unnormalized(assignment):
+    val = 1.0
+    for (a, b), pot in potentials.items():
+        val *= pot[assignment[a], assignment[b]]
+    return val
+
+states = list(itertools.product([0, 1], repeat=len(nodes)))
+scores = {s: joint_unnormalized(dict(zip(nodes, s))) for s in states}
+Z = sum(scores.values())
+probs = {s: v / Z for s, v in scores.items()}
+
+for s, p in probs.items():
+    print(dict(zip(nodes, s)), round(p, 4))
+print("P.N.V.CHAVIN/192525310")    
