@@ -1,0 +1,51 @@
+from pgmpy.models import DiscreteBayesianNetwork
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.inference import VariableElimination
+import numpy as np
+import itertools
+
+bn_model = DiscreteBayesianNetwork([
+    ('Flu', 'Fever'), ('Flu', 'Cough'),
+    ('Covid', 'Fever'), ('Covid', 'Cough'), ('Covid', 'LossOfTaste')
+])
+
+cpd_flu = TabularCPD('Flu', 2, [[0.9], [0.1]])
+cpd_covid = TabularCPD('Covid', 2, [[0.85], [0.15]])
+cpd_fever = TabularCPD('Fever', 2,
+    [[0.95, 0.2, 0.3, 0.05], [0.05, 0.8, 0.7, 0.95]],
+    evidence=['Flu', 'Covid'], evidence_card=[2, 2])
+cpd_cough = TabularCPD('Cough', 2,
+    [[0.9, 0.25, 0.3, 0.1], [0.1, 0.75, 0.7, 0.9]],
+    evidence=['Flu', 'Covid'], evidence_card=[2, 2])
+cpd_taste = TabularCPD('LossOfTaste', 2,
+    [[0.98, 0.1], [0.02, 0.9]], evidence=['Covid'], evidence_card=[2])
+
+bn_model.add_cpds(cpd_flu, cpd_covid, cpd_fever, cpd_cough, cpd_taste)
+bn_model.check_model()
+
+infer = VariableElimination(bn_model)
+result = infer.query(variables=['Covid'], evidence={'Fever': 1, 'Cough': 1, 'LossOfTaste': 1})
+print(result)
+
+nodes = ['Flu', 'Covid', 'Fever', 'Cough']
+
+def pairwise_potential(strength=2.0):
+    return np.array([[strength, 1.0], [1.0, strength]])
+
+edges = [('Flu', 'Fever'), ('Flu', 'Cough'), ('Covid', 'Fever'), ('Covid', 'Cough')]
+potentials = {e: pairwise_potential() for e in edges}
+
+def joint_unnormalized(assignment):
+    val = 1.0
+    for (a, b), pot in potentials.items():
+        val *= pot[assignment[a], assignment[b]]
+    return val
+
+states = list(itertools.product([0, 1], repeat=len(nodes)))
+scores = {s: joint_unnormalized(dict(zip(nodes, s))) for s in states}
+Z = sum(scores.values())
+probs = {s: v / Z for s, v in scores.items()}
+
+for s, p in probs.items():
+    print(dict(zip(nodes, s)), round(p, 4))
+print("P.N.V.CHAVIN/192525310")    
