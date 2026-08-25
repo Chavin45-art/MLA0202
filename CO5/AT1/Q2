@@ -1,0 +1,26 @@
+import numpy as np
+
+n_ads, n_rounds, c = 5, 10000, 2
+true_ctr = np.random.uniform(0.01, 0.3, n_ads)
+counts = np.zeros(n_ads)
+values = np.zeros(n_ads)
+total_reward = 0
+total_regret = 0
+
+for t in range(1, n_rounds+1):
+    if 0 in counts:
+        ad = np.argmin(counts)
+    else:
+        ucb = values + c*np.sqrt(np.log(t)/counts)
+        ad = np.argmax(ucb)
+    r = np.random.binomial(1, true_ctr[ad])
+    counts[ad] += 1
+    values[ad] += (r - values[ad])/counts[ad]
+    total_reward += r
+    total_regret += true_ctr.max() - true_ctr[ad]
+
+print("True CTRs:", true_ctr)
+print("Estimated:", values)
+print("Total reward:", total_reward)
+print("Cumulative regret:", total_regret)
+print("P.N.V.CHAVIN/192525310")
