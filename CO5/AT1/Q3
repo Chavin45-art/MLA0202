@@ -1,0 +1,18 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+n = 1_000_000
+np.random.seed(42)
+categories = np.random.choice(['A','B','C','D'], size=n, p=[0.4,0.3,0.2,0.1])
+labels = np.random.choice([0,1], size=n, p=[0.7,0.3])
+df = pd.DataFrame({'category': categories, 'label': labels})
+
+sample, _ = train_test_split(
+    df, train_size=0.05, stratify=df['category'], random_state=42
+)
+
+print(df['category'].value_counts(normalize=True))
+print(sample['category'].value_counts(normalize=True))
+print(sample.shape)
+print("P.N.V.CHAVIN/192525310")
