@@ -1,0 +1,55 @@
+import numpy as np
+
+grid_size = (5, 5)
+obstacles = [(1,1), (2,1), (3,3)]
+goal = (4,4)
+actions = ['U','D','L','R']
+gamma, theta, noise = 0.9, 1e-4, 0.1
+
+def step(s, a):
+    x, y = s
+    if a=='U': nx,ny = x-1,y
+    elif a=='D': nx,ny = x+1,y
+    elif a=='L': nx,ny = x,y-1
+    else: nx,ny = x,y+1
+    if 0<=nx<grid_size[0] and 0<=ny<grid_size[1] and (nx,ny) not in obstacles:
+        return (nx,ny)
+    return s
+
+def reward(s):
+    if s==goal: return 10
+    if s in obstacles: return -10
+    return -1
+
+V = np.zeros(grid_size)
+
+while True:
+    delta = 0
+    newV = np.copy(V)
+    for x in range(grid_size[0]):
+        for y in range(grid_size[1]):
+            s = (x,y)
+            if s==goal or s in obstacles: continue
+            vals = []
+            for a in actions:
+                ns = step(s,a)
+                v = (1-noise)*(reward(ns)+gamma*V[ns])
+                for oa in [x for x in actions if x!=a]:
+                    ons = step(s,oa)
+                    v += (noise/3)*(reward(ons)+gamma*V[ons])
+                vals.append(v)
+            newV[x][y] = max(vals)
+            delta = max(delta, abs(newV[x][y]-V[x][y]))
+    V[:] = newV
+    if delta < theta: break
+
+policy = {}
+for x in range(grid_size[0]):
+    for y in range(grid_size[1]):
+        s = (x,y)
+        if s==goal or s in obstacles: continue
+        policy[s] = max(actions, key=lambda a: reward(step(s,a))+gamma*V[step(s,a)])
+
+print(V)
+print(policy)
+print("P.N.V.CHAVIN/192525310")
