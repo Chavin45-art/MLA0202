@@ -1,0 +1,27 @@
+import random
+
+def generate_random_sample():
+    return random.choices(["LOW", "MEDIUM", "HIGH"], weights=[0.5, 0.3, 0.2])[0]
+
+def simulate_delivery(traffic_condition, base_time=30):
+    if traffic_condition == "LOW":
+        delay = random.uniform(0, 10)
+    elif traffic_condition == "MEDIUM":
+        delay = random.uniform(10, 30)
+    else:
+        delay = random.uniform(30, 60)
+    return base_time + delay
+
+def monte_carlo_delivery_estimate(N, allowed_time_limit=50):
+    success_count = 0
+    for _ in range(N):
+        traffic = generate_random_sample()
+        total_time = simulate_delivery(traffic)
+        if total_time <= allowed_time_limit:
+            success_count += 1
+    probability = success_count / N
+    print(f"Estimated probability of on-time delivery: {probability:.4f}")
+    return probability
+
+monte_carlo_delivery_estimate(10000)
+print("P.N.V.CHAVIN/192525310")
