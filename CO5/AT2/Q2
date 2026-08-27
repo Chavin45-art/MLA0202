@@ -1,0 +1,27 @@
+import random
+
+def observe_user_engagement(movie_id, true_rewards):
+    return random.gauss(true_rewards[movie_id], 1.0)
+
+def epsilon_greedy_bandit(K, epsilon, T, true_rewards=None):
+    if true_rewards is None:
+        true_rewards = [random.uniform(0, 1) for _ in range(K)]
+
+    Q = [0.0] * K
+    counts = [0] * K
+
+    for t in range(T):
+        if random.random() < epsilon:
+            m = random.randint(0, K - 1)
+        else:
+            m = Q.index(max(Q))
+
+        reward = observe_user_engagement(m, true_rewards)
+        counts[m] += 1
+        Q[m] += (reward - Q[m]) / counts[m]
+
+    best_movie = Q.index(max(Q))
+    print(f"Movie with highest expected reward: {best_movie} (Q={Q[best_movie]:.3f})")
+    return best_movie, Q
+
+epsilon_greedy_bandit(K=5, epsilon=0.1, T=1000)
